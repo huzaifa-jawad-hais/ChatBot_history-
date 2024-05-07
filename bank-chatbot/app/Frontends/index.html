@@ -1,0 +1,514 @@
+<html>
+<head>
+    <style>
+  #chatbox {
+    height: 400px; /* Fixed height */
+    max-width: 800px;
+    width: 100%; /* This makes the div responsive to the width of its container */
+    margin: 0 auto; /* Center the div */
+    padding: 15px;
+    border: 1px solid #E5E5E5;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+    border-radius: 15px; /* Rounded corners */
+    background-color: #FFFFFF;
+    overflow-y: auto; /* Ensures scrollbar appears if content overflows */
+  }
+        body {
+            font-family: 'Avenir', sans-serif;
+            background-color: transparent;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+    
+        #calendly-popup {
+            display: flex;
+            position: fixed;
+            top: 100px;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+    
+        body.popup-open {
+            overflow: hidden;
+        }
+    
+        #calendly-popup iframe {
+            height: 90vh;
+            width: 80vw;
+        }
+    
+        .container {
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+            margin-left: 150px;
+        }
+    
+        form {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 700px;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px; /* Distance the input bar from the chatbox */
+        }
+    
+        .user-message, .bot-message {
+            border: none; /* Remove solid border */
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 20px;
+            line-height: 1.6;
+            box-shadow: 4px 2px 6px rgba(0, 0, 0, 0.05); /* Shadow shifted on the X-axis with reduced opacity */
+            white-space: pre-wrap;
+            font-size: 15px;
+            background-color: transparent; /* No background */
+            color: black;
+        }
+    
+        .user-message {
+            text-align: right;
+        }
+    
+        #inputField {
+            border: null;
+            width: 85%;
+            padding: 12px 15px;
+            color: #333333;
+            background-color: #FEFEFE;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.02);
+            border-radius: 12px;
+            transition: box-shadow 0.3s, background-color 0.3s;
+            font-size: 16px;
+            position: relative;
+            overflow: hidden; /* Hides border animation outside the input */
+        }
+
+        #inputField::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 10px solid transparent;
+            background-image: linear-gradient(white, white), radial-gradient(circle at top left, #FF5733, #33FF57, #3357FF, #FF33A1);
+            background-origin: border-box;
+            background-clip: content-box, border-box;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        #inputField:focus {
+            background-color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            outline: none;
+        }
+
+        #inputField:focus::before {
+            opacity: 1;
+            transform: scale(1.1);
+            animation: pulseBorder 1.5s infinite;
+        }
+
+        @keyframes pulseBorder {
+            0%, 100% {
+                transform: scale(1.1);
+            }
+            50% {
+                transform: scale(1.15);
+            }
+        }
+    
+        button, .exampleButton {
+            background: linear-gradient(135deg, #FAFAFA, #EDEDED); /* From almost pure white to a slightly darker gray */
+            color: #333333;
+            border: none;
+            box-shadow: 10px 6px 20px rgba(190, 190, 190, 0.25); /* Slightly more pronounced shadow and shifted to the right */
+            transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            padding: 12px 20px;
+        }
+
+        button:hover, .exampleButton:hover {
+            background: linear-gradient(135deg, #EDEDED, #FAFAFA); /* Reverse colors on mouse hover */
+            transform: translateY(-2px);
+            box-shadow: 12px 7px 22px rgba(180, 180, 180, 0.28); /* Even more pronounced shadow and shifted to the right on hover */
+        }
+
+
+        /* "Light" effect on mouse hover */
+        button::before, .exampleButton::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1); /* Very light white light */
+            transform: rotate(45deg) translate(-50%, -75%);
+            transition: transform 1s;
+            pointer-events: none; /* Avoid interactions with the effect */
+        }
+
+        button:hover::before, .exampleButton:hover::before {
+            transform: rotate(45deg) translate(50%, 50%); /* Move the "light" effect on mouse hover */
+        }
+        .response-container {
+  font-family: Arial, sans-serif;
+  color: #333;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  margin: 10px 0;
+}
+.response-container p {
+  margin: 0;
+}
+        .typing-message {
+            color: #777;
+            font-style: italic;
+        }
+    
+        .welcome-message1, .welcome-message2 {
+            font-family: 'Avenir', sans-serif;
+            font-weight: 300;
+            color: black; /* Basic black color */
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 2s ease-in-out 1 forwards;
+            background: -webkit-linear-gradient(-45deg, #B0B0B0 20%, black 80%);/* Gradient from left (light) to right (dark) */
+            -webkit-background-clip: text; /* Applies background only to text */
+            background-clip: text; /* Standard property for compatibility */
+            color: transparent; /* Makes text color transparent to show the background */
+        }
+
+        .welcome-message2 {
+            font-size: 29px;
+            animation-delay: 0.5s;
+        }
+
+        .welcome-message1 {
+            font-size: 69px;
+        }    
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+    
+        #titlesContainer {
+            grid-column: 1;
+            position: absolute;
+            left: 5px;
+            top: 50%;
+            width: 160px;
+            max-height: 300px;
+            overflow-y: auto;
+            transform: translateY(-50%);
+            font-size: 14px;
+            background-color: transparent;
+            display: flex; /* Flexbox for centering */
+            flex-direction: column; /* Stack children vertically */
+            text-align: center;
+            justify-content: center; /* Center children vertically */
+            align-items: center; /* Center children horizontally */
+            white-space: normal; /* Ensure text wraps */
+            padding: 0;
+        } 
+        
+        #buttonContainer {
+            grid-column: 3;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            height: 400px;
+            width: calc(2cm + 5 * 16px);
+            padding-left: 1cm;
+            padding-right: 1cm;
+        }
+    
+        #titlesContainer a {
+            display: block;
+            margin-bottom: 15px; /* Increased space between titles */
+            background-color: #FFFFFF; /* Slightly gray background */
+            padding: 5px 10px; /* Padding around the titles */
+            border-radius: 5px; /* Slightly rounded corners */
+            margin: 15px auto;
+            box-shadow: none; /* Light shadow for depth */
+            transition: background-color 0.3s, transform 0.3s; /* Transition for hover effects */
+            text-decoration: none;
+            color: #333; /* Dark text color */
+            transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+    
+        #titlesContainer a:hover {
+            background-color: #e7e7e7; /* Change background color on hover */
+            transform: translateX(10px); /* Slightly shift title to the right */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        #titlesContainer a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%; /* Initially positioned outside the left of the parent element */
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent); /* Faded effect */
+            transform: skewX(-45deg);
+            transition: left 0.3s ease-out; /* Add the transition for the expansion effect */
+            pointer-events: none;
+        }
+    
+        #titlesContainer a:hover::before {
+            left: 150%;
+        } 
+
+        #mainMenuButtonContainer {
+            display: none; /* Hide by default */
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1004; /* Ensure it's above other elements */
+        }
+
+        #mainMenuOverlay {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1005; /* Ensure it's above other elements */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #menuOptions {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        #menuOptions button {
+            width: 48%; /* Divide space between the two buttons */
+        }
+
+        #menuContent a {
+            display: block;
+            margin-bottom: 15px;
+            background-color: #FFFFFF;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 15px auto;
+            box-shadow: none;
+            transition: background-color 0.3s, transform 0.3s;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+
+        #menuContent a:hover {
+            background-color: #e7e7e7;
+            transform: translateX(10px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        #menuContent {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #closeMenu {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            font-size: 12px; /* Increase size for better visibility */
+            color: white; /* Make the "X" white for contrast against the dark background */
+            background-color: rgba(0, 0, 0, 0.6); /* Add a slightly transparent background for better visibility */
+            border-radius: 50%; /* Make the background circular */
+            padding: 10px 15px; /* Increase space around the "X" */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Add a shadow for depth */
+            transition: background-color 0.3s, transform 0.3s; /* Add transitions for a smooth effect */
+        }
+
+        #closeMenu:hover {
+            background-color: rgba(0, 0, 0, 0.8); /* Darken the background on hover */
+            transform: scale(1.1); /* Slightly increase size on hover */
+        }
+
+        @media only screen and (max-width: 800px) {
+            body {
+                flex-direction: column;
+            }
+
+            #mainMenuButtonContainer {
+                display: block; /* Show in mobile mode */
+            }
+
+            #titlesContainer {
+                display: none;
+            }
+
+            #buttonContainer {
+                display: none;
+            }
+
+            .container {
+                margin-left: 0; /* Remove left margin */
+            }
+
+            #chatbox {
+            max-width: 100%; /* Set maximum width to 100% */
+              margin: 0 auto;
+              width: 95%;
+            }
+          #inputfield {
+            width: 80%;
+          }
+        }
+
+        .bot-message,
+        .user-message,
+        .title-entering {
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out; /* Add a transition for the fade effect */
+        }
+
+        .bot-message.removing,
+        .user-message.removing,
+        .title-entering.removing {
+            opacity: 0; /* Reduce opacity during the removal animation */
+        }
+    </style>
+    
+</head>
+<body>
+
+<div id="titlesContainer">
+</div>
+
+  <div class="container">
+    <div id="mainMenuButtonContainer">
+    <button id="mainMenuButton" onclick="toggleMainMenu()">☰ Menu</button>
+</div>
+
+<div id="mainMenuOverlay" style="display: none;">
+    <span id="closeMenu" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">X</span>
+
+    <div id="menuOptions">
+        <button onclick="showContent('titlesContainer')">Chat History</button>
+        <button onclick="showContent('buttonContainer')">Most Asked Questions</button>
+    </div>
+    <div id="menuContent">
+        <!-- Content selected (chat history or questions) will be displayed here -->
+    </div>
+</div>
+    <div id="chatbox">
+        <!-- Calendly inline widget begin -->
+<div id="calendly-popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+<div class="calendly-inline-widget" data-url="https://calendly.com/hais-booking" style="min-width:320px;height:700px;"></div>
+  <button id="close-button" style="position:absolute; top:10px; right:10px; background:transparent; border:none; font-size:20px;">&times;</button>
+  </div>
+<script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+<!-- Calendly inline widget end -->
+      <p class="welcome-message1">Hi, I am Hal</p>
+      <p class="welcome-message2">How can I help you today?</p>
+    </div>
+    <form onsubmit="event.preventDefault(); sendMessage();">
+      <input id="inputField" type="text" placeholder="Type your message...">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <div id="buttonContainer">
+    <button class="exampleButton" onclick="buttonSend('Which services do you offer?')">Which services do you offer?</button>
+    <button class="exampleButton" onclick="buttonSend('What is HAIS?')">What is HAIS?</button>
+    <button class="exampleButton" onclick="buttonSend('What can you do for my business?')">What can you do for my business?</button>
+    <button class="exampleButton" onclick="buttonSend('Tell me more about your pricing')">Tell me more about your pricing</button>
+    <button class="exampleButton" onclick="buttonSend('Can we schedule a call?')">Can we schedule a call?</button>
+  </div>
+
+  <script>
+    
+  </script>
+</body>
+</html>
+
+<script>
+    async function sendMessage() {
+        const inputField = document.getElementById('inputField');
+        const message = inputField.value;
+        const chatbox = document.getElementById('chatbox');
+    
+        // Clear the input field after capturing the message
+        inputField.value = '';
+    
+        // Display the user's message in the chatbox with styling
+        const userMessageDiv = document.createElement('div');
+        userMessageDiv.textContent = `You: ${message}`;
+        userMessageDiv.style.color = 'blue'; // Changing the text color
+        userMessageDiv.style.marginBottom = '10px'; // Adding margin at the bottom
+        userMessageDiv.style.padding = '5px'; // Adding padding
+        userMessageDiv.style.borderRadius = '5px'; // Rounding the corners
+        userMessageDiv.style.backgroundColor = '#f0f0f0'; // Setting a background color
+        chatbox.appendChild(userMessageDiv);
+    
+        // Automatically scroll to the bottom
+        chatbox.scrollTop = chatbox.scrollHeight;
+    
+        // Send the message to the FastAPI backend
+        const response = await fetch('/message/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({question: message}),
+        });
+    
+        if (response.ok) {
+            const data = await response.json();
+            // Create a new div for the answer and append it to the chatbox
+            const responseDiv = document.createElement('div');
+            responseDiv.innerHTML = data.answer; // Assuming the backend sends HTML content as the answer
+            chatbox.appendChild(responseDiv);
+
+            // Automatically scroll to the bottom to show the latest response
+            chatbox.scrollTop = chatbox.scrollHeight;
+        } else {
+            console.error('Error:', response.statusText);
+            // Handle the error. Perhaps, display a user-friendly message within the chatbox or elsewhere
+        }
+    }
+</script>
+
+    
+        

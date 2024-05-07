@@ -1,0 +1,11 @@
+# CLi powershell code to test model
+$response = Invoke-WebRequest -Uri 'http://127.0.0.1:5000/message/' `
+>> -Method 'POST' `
+>> -Headers @{
+>>     'Accept' = 'application/json'
+>>     'Content-Type' = 'application/json'
+>> } `
+>> -Body (@{question="How to open an account???"} | ConvertTo-Json) `
+>> -UseBasicParsing
+>> 
+>> $response.Content
